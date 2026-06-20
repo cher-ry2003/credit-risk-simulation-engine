@@ -1,0 +1,56 @@
+version: 2
+
+models:
+  - name: mart_default_risk_exposure
+    description: >
+      Per-customer rolling 90-day default risk metrics with credit-tier risk
+      bucketing (LOW / MEDIUM / HIGH / CRITICAL).
+    columns:
+      - name: customer_id
+        tests:
+          - not_null
+          - unique
+      - name: risk_bucket
+        tests:
+          - not_null
+          - accepted_values:
+              values: ["LOW", "MEDIUM", "HIGH", "CRITICAL"]
+
+  - name: mart_churn_probability
+    description: >
+      RFM-based churn probability scoring per customer with quintile-bucketed
+      churn risk labels.
+    columns:
+      - name: customer_id
+        tests:
+          - not_null
+          - unique
+      - name: churn_risk_label
+        tests:
+          - not_null
+          - accepted_values:
+              values: ["VERY_LOW", "LOW", "MEDIUM", "HIGH", "VERY_HIGH"]
+
+  - name: mart_customer_ltv_scd2
+    description: >
+      Customer LTV lifecycle segments modelled as a Slowly Changing Dimension
+      Type 2 — each row represents a segment epoch with effective/expiry dates
+      and an is_current flag.
+    columns:
+      - name: surrogate_key
+        tests:
+          - not_null
+          - unique
+      - name: customer_id
+        tests:
+          - not_null
+      - name: ltv_segment
+        tests:
+          - not_null
+          - accepted_values:
+              values: ["STARTER", "GROWTH", "LOYAL", "CHAMPION", "CHURNED"]
+      - name: is_current
+        tests:
+          - not_null
+          - accepted_values:
+              values: [true, false]

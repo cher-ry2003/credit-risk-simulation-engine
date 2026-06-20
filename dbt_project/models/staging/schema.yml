@@ -1,0 +1,65 @@
+version: 2
+
+sources:
+  - name: raw
+    database: "{{ env_var('SNOWFLAKE_DATABASE', 'CONSUMER_RISK_DB') }}"
+    schema: RAW
+    tables:
+      - name: consumer_transactions
+        description: "Raw consumer transaction records loaded by the Airflow ingestion DAG."
+        columns:
+          - name: TRANSACTION_ID
+            description: "UUID primary key for each transaction."
+            tests:
+              - not_null
+              - unique
+          - name: CUSTOMER_ID
+            tests:
+              - not_null
+          - name: TXN_DATE
+            tests:
+              - not_null
+          - name: AMOUNT
+            tests:
+              - not_null
+              - dbt_expectations.expect_column_values_to_be_between:
+                  min_value: 0
+                  max_value: 1000000
+          - name: DEFAULT_FLAG
+            tests:
+              - accepted_values:
+                  values: [0, 1]
+          - name: CHURN_FLAG
+            tests:
+              - accepted_values:
+                  values: [0, 1]
+          - name: LTV_SEGMENT
+            tests:
+              - accepted_values:
+                  values: ["STARTER", "GROWTH", "LOYAL", "CHAMPION", "CHURNED"]
+
+models:
+  - name: stg_transactions
+    description: "Cleaned and deduplicated consumer transactions from the raw landing table."
+    columns:
+      - name: transaction_id
+        tests:
+          - not_null
+          - unique
+      - name: customer_id
+        tests:
+          - not_null
+      - name: txn_date
+        tests:
+          - not_null
+      - name: amount
+        tests:
+          - not_null
+
+  - name: stg_customers
+    description: "Derived customer dimension from the transaction grain."
+    columns:
+      - name: customer_id
+        tests:
+          - not_null
+          - unique
